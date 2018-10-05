@@ -70,7 +70,7 @@ import LineChart from './LineChart';
         components:{LineChart},
         data() {
             return {
-            // data: 'nothing',
+            data: 'nothing',
             tasks: [],
             newtask: "",
             options: {},
@@ -166,7 +166,7 @@ import LineChart from './LineChart';
                     console.error('Logging the error', error);
                 });
         },
-         /**
+        /**
          * To fetch last house activities of the user
          */
         fetchActivitiesForLast60Minutes() {
@@ -179,7 +179,7 @@ import LineChart from './LineChart';
                         this.pending_tasks_count.push(activity.pending_tasks);
                     }, this.labels, this.pending_tasks_count);
                     console.log('Activity Data: ', this.pending_tasks_count);
-                    // this.fillData();
+                    this.fillData();
                 })
                 .catch(function (error) {
                     console.error('Fetch Activities: ', error);
@@ -190,23 +190,17 @@ import LineChart from './LineChart';
          * @param newData
          */
         fillData (newData = {}) {
-            axios.get('/activities/last60minutes')
-                .then((response) => {
-                    var activities = response.data;
-                    console.info('Activities', response.data);
-                    activities.forEach((activity) => {
-                        this.labels.push(moment(activity.created_at).format("HH:mm:ss"));
-                        this.pending_tasks_count.push(activity.pending_tasks);
-                    }, this.labels, this.pending_tasks_count);
-                    console.log('Activity Data: ', this.pending_tasks_count);
-                    // this.fillData();
-                })
+            if (! _.isEmpty(newData)) {
+                this.labels.push(newData.label);
+                this.pending_tasks_count.push(newData.data);
+                // console.debug(this.$refs._chart);
+            }
             this.datacollection = {
                 labels: this.labels,
                 datasets: [
                     {
                         label: "Pending Tasks",
-                        pointRadius: 2,
+                        pointRadius: 10,
                         backgroundColor: '#c7ecea',
                         borderColor: '#5E9732',
                         strokeColor: "rgba(151,187,205,1)",
@@ -229,9 +223,9 @@ import LineChart from './LineChart';
     },
         mounted() {
             
-        // this.setupChartOptions();
-        this.fetchActivitiesForLast60Minutes();
+        this.setupChartOptions();
         this.fetchAllTasks();
+        this.fetchActivitiesForLast60Minutes();
         this.fillData();
         }
     }

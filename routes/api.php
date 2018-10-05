@@ -40,5 +40,5 @@ Route::group([
       'cards' => 'API\CardController'
     ]);    
     Route::put('tasks/{task}/toggle', 'TaskController@toggleStatus')->name('tasks.toggle');
-
+    Route::get('activities/last60minutes', 'ActivityController@last60Minutes')->name('activities.last60minutes');
 });

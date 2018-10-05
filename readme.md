@@ -1,4 +1,4 @@
-Laravel 5.7 API using JSON web tokens (JWTs). The client is Vue 2.5
+## Laravel 5.7 API using JSON web tokens (JWTs). The client is Vue 2.5
 
 uses tymons jwt-auth on the PHP to generate a JWT which stored on the client side using websanova.
 The Vue components are tested with Jest, the API with PHPUnit.

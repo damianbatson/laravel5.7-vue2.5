@@ -35725,13 +35725,17 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         return {
             // data: 'nothing',
             tasks: [],
-            newtask: "",
+            taskItem: "",
+            status: false,
             options: {},
             activities: [],
             datacollection: null,
             labels: [],
             pending_tasks_count: []
-
+            // generateRequestData(taskItem){
+            //     task: taskItem;
+            //     status: false;
+            // }
         };
     },
 
@@ -35775,6 +35779,7 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
             }
             var data = {
                 item: taskItem,
+                status: false,
                 statuses: {
                     pending: this.pendingTasks.length,
                     completed: this.completedTasks.length
@@ -35789,9 +35794,9 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         createNewTask: function createNewTask() {
             var _this2 = this;
 
-            __WEBPACK_IMPORTED_MODULE_0_axios___default.a.post('/tasks', this.generateRequestData(this.newtask)).then(function (response) {
-                _this2.tasks.push(response.data.task_item);
-                _this2.newtask = '';
+            __WEBPACK_IMPORTED_MODULE_0_axios___default.a.post('/tasks', this.generateRequestData(this.taskItem)).then(function (response) {
+                _this2.tasks.push(response.data.task_item, response.data.task_item.status);
+                _this2.taskItem = '';
                 console.log('store');
                 _this2.fillData({
                     label: __WEBPACK_IMPORTED_MODULE_1_moment___default()(response.data.user_activity.created_at).format("HH:mm:ss"),
@@ -35809,16 +35814,17 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         toggleTaskStatus: function toggleTaskStatus(taskItem) {
             var _this3 = this;
 
-            __WEBPACK_IMPORTED_MODULE_0_axios___default.a.put('/tasks/' + taskItem.id + '/toggle', this.generateRequestData(taskItem)).then(function (response) {
+            __WEBPACK_IMPORTED_MODULE_0_axios___default.a.put('/tasks/' + taskItem.id + '/toggle', this.generateRequestData(this.taskItem)).then(function (response) {
                 taskItem.status = response.data.task_item.status;
                 _this3.fillData({
                     label: __WEBPACK_IMPORTED_MODULE_1_moment___default()(response.data.user_activity.created_at).format("HH:mm:ss"),
                     data: response.data.user_activity.pending_tasks
                 });
             }).catch(function (error) {
-                _this3.tasks.forEach(function (todo) {
-                    if (todo.id === taskItem.id) {
-                        todo.status = !taskItem.status;
+                _this3.tasks.forEach(function (task) {
+                    if (task.id === taskItem.id) {
+                        task.status = !taskItem.status;
+                        console.error('Logging the error', error);
                     }
                 });
                 console.error('Logging the error', error);
@@ -35852,8 +35858,6 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
         fillData: function fillData() {
             var _this5 = this;
 
-            var newData = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
-
             __WEBPACK_IMPORTED_MODULE_0_axios___default.a.get('/activities/last60minutes').then(function (response) {
                 var activities = response.data;
                 console.info('Activities', response.data);
@@ -35882,13 +35886,13 @@ var _typeof = typeof Symbol === "function" && typeof Symbol.iterator === "symbol
     },
     computed: {
         pendingTasks: function pendingTasks() {
-            return this.tasks.filter(function (todo) {
-                return !todo.status;
+            return this.tasks.filter(function (task) {
+                return !task.status;
             });
         },
         completedTasks: function completedTasks() {
-            return this.tasks.filter(function (todo) {
-                return todo.status;
+            return this.tasks.filter(function (task) {
+                return task.status;
             });
         }
     },
@@ -52129,8 +52133,8 @@ var render = function() {
                                 {
                                   name: "model",
                                   rawName: "v-model",
-                                  value: _vm.newtask,
-                                  expression: "newtask"
+                                  value: _vm.taskItem,
+                                  expression: "taskItem"
                                 }
                               ],
                               staticClass: "form-control input-lg",
@@ -52139,13 +52143,13 @@ var render = function() {
                                 placeholder: "(min 5 characters)",
                                 required: ""
                               },
-                              domProps: { value: _vm.newtask },
+                              domProps: { value: _vm.taskItem },
                               on: {
                                 input: function($event) {
                                   if ($event.target.composing) {
                                     return
                                   }
-                                  _vm.newtask = $event.target.value
+                                  _vm.taskItem = $event.target.value
                                 }
                               }
                             }),
@@ -52171,19 +52175,20 @@ var render = function() {
                   _c(
                     "div",
                     { staticClass: "list-group" },
-                    _vm._l(_vm.pendingTasks, function(todo) {
+                    _vm._l(_vm.pendingTasks, function(task) {
                       return _c(
                         "a",
                         {
+                          key: task.id,
                           staticClass: "list-group-item",
                           on: {
                             click: function($event) {
-                              _vm.toggleTaskStatus(todo)
+                              _vm.toggleTaskStatus(task)
                             }
                           }
                         },
                         [
-                          _vm._v(_vm._s(todo.task) + " "),
+                          _vm._v(_vm._s(task.task) + " "),
                           _c("span", {
                             staticClass: "glyphicon glyphicon-ok",
                             attrs: { "aria-hidden": "true" }
@@ -52205,19 +52210,20 @@ var render = function() {
                   _c(
                     "div",
                     { staticClass: "list-group" },
-                    _vm._l(_vm.completedTasks, function(todo) {
+                    _vm._l(_vm.completedTasks, function(task) {
                       return _c(
                         "a",
                         {
+                          key: task.id,
                           staticClass: "list-group-item",
                           on: {
                             click: function($event) {
-                              _vm.toggleTaskStatus(todo)
+                              _vm.toggleTaskStatus(task)
                             }
                           }
                         },
                         [
-                          _vm._v(_vm._s(todo.task) + " "),
+                          _vm._v(_vm._s(task.task) + " "),
                           _c("span", {
                             staticClass: "glyphicon glyphicon-chevron-left",
                             attrs: { "aria-hidden": "true" }

@@ -13,7 +13,7 @@
                 <div class="panel panel-default">
                     <div class="panel-heading">Dashboard</div>
                     <div class="panel-body">
-                        <p v-for="task in tasks" :key="task.id">Data: {{ task.user_id }} {{task.task}}</p>
+                        <p v-for="task in tasks" v-bind:key="task.id">Data: {{ task.user_id }} {{task.task}}</p>
                         <div class="row">
         <div class="col-md-12">
             <h4>Chart: <span style="color:blue"></span></h4>
@@ -27,7 +27,7 @@
             <div class="col-lg-8 col-lg-offset-2">
                 <form @submit.prevent="createNewTask">
                     <div class="input-group input-group-lg">
-                        <input type="text" class="form-control input-lg" placeholder="(min 5 characters)" v-model="newtask" required>
+                        <input type="text" class="form-control input-lg" placeholder="(min 5 characters)" v-model="taskItem" required>
                         <span class="input-group-btn">
                         <button type="submit" class="btn btn-default btn-lg">+ New Task</button>
                     </span>
@@ -41,7 +41,7 @@
         <div class="col-md-6">
             <h5 class="text-center">Pending Tasks <span class="label label-warning">{{ pendingTasks.length }}</span></h5>
             <div class="list-group">
-                <a class="list-group-item" v-for="todo in pendingTasks" @click="toggleTaskStatus(todo)">{{ todo.task }} <span class="glyphicon glyphicon-ok" aria-hidden="true"></span></a>
+                <a class="list-group-item" v-for="task in pendingTasks" v-bind:key="task.id" @click="toggleTaskStatus(task)">{{ task.task }} <span class="glyphicon glyphicon-ok" aria-hidden="true"></span></a>
             </div>
         </div>
 
@@ -49,7 +49,7 @@
         <div class="col-md-6">
             <h5 class="text-center">Completed Tasks <span class="label label-success">{{ completedTasks.length }}</span></h5>
             <div class="list-group">
-                <a class="list-group-item" v-for="todo in completedTasks" @click="toggleTaskStatus(todo)">{{ todo.task }} <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span></a>
+                <a class="list-group-item" v-for="task in completedTasks" v-bind:key="task.id" @click="toggleTaskStatus(task)">{{ task.task }} <span class="glyphicon glyphicon-chevron-left" aria-hidden="true"></span></a>
             </div>
         </div>
     </div>
@@ -72,13 +72,17 @@ import LineChart from './LineChart';
             return {
             // data: 'nothing',
             tasks: [],
-            newtask: "",
+            taskItem: "",
+            status: false,
             options: {},
             activities: [],
             datacollection: null,
             labels: [],
-            pending_tasks_count: []
-                
+            pending_tasks_count: [],
+                // generateRequestData(taskItem){
+                //     task: taskItem;
+                //     status: false;
+                // }
             }
         },
         methods: {
@@ -119,6 +123,7 @@ import LineChart from './LineChart';
             }
             var data = {
                 item: taskItem,
+                status: false,
                 statuses: {
                     pending: this.pendingTasks.length,
                     completed: this.completedTasks.length
@@ -130,10 +135,10 @@ import LineChart from './LineChart';
          * To create new task
          */
         createNewTask() {
-            axios.post('/tasks', this.generateRequestData(this.newtask))
+            axios.post('/tasks', this.generateRequestData(this.taskItem))
                 .then((response) => {
-                    this.tasks.push(response.data.task_item);
-                    this.newtask = '';
+                    this.tasks.push(response.data.task_item, response.data.task_item.status);
+                    this.taskItem = '';
                     console.log('store');
                     this.fillData({
                         label: moment(response.data.user_activity.created_at).format("HH:mm:ss"),
@@ -149,7 +154,7 @@ import LineChart from './LineChart';
          * @param taskItem
          */
         toggleTaskStatus(taskItem) {
-            axios.put('/tasks/'+ taskItem.id +'/toggle', this.generateRequestData(taskItem))
+            axios.put('/tasks/'+ taskItem.id +'/toggle', this.generateRequestData(this.taskItem))
                 .then((response) => {
                     taskItem.status = response.data.task_item.status;
                     this.fillData({
@@ -158,9 +163,10 @@ import LineChart from './LineChart';
                     });
                 })
                 .catch((error) => {
-                    this.tasks.forEach((todo) => {
-                        if (todo.id === taskItem.id) {
-                            todo.status = ! taskItem.status;
+                    this.tasks.forEach((task) => {
+                        if (task.id === taskItem.id) {
+                            task.status = ! taskItem.status;
+                            console.error('Logging the error', error);
                         }
                     });
                     console.error('Logging the error', error);
@@ -189,7 +195,7 @@ import LineChart from './LineChart';
          * To fill data into the chart
          * @param newData
          */
-        fillData (newData = {}) {
+        fillData () {
             axios.get('/activities/last60minutes')
                 .then((response) => {
                     var activities = response.data;
@@ -221,10 +227,10 @@ import LineChart from './LineChart';
     },
         computed: {
         pendingTasks() {
-            return this.tasks.filter(todo => ! todo.status);
+            return this.tasks.filter(task => ! task.status);
         },
         completedTasks() {
-            return this.tasks.filter(todo => todo.status);
+            return this.tasks.filter(task => task.status);
         }
     },
         mounted() {
